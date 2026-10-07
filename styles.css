@@ -26,6 +26,7 @@ body {
     linear-gradient(135deg, #eef3f8 0%, #f8fafc 52%, #edf3f0 100%);
   color: var(--ink);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 18px;
 }
 
 .shell {
@@ -73,7 +74,7 @@ body {
 .eyebrow {
   margin: 0 0 10px;
   color: inherit;
-  font-size: 0.77rem;
+  font-size: 0.9rem;
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -104,7 +105,7 @@ h2 {
   max-width: 1120px;
   margin-bottom: 0;
   color: rgba(255, 255, 255, 0.78);
-  font-size: 1.08rem;
+  font-size: 1.28rem;
   line-height: 1.55;
 }
 
@@ -121,7 +122,7 @@ h2 {
 .hero-panel span:last-child {
   display: block;
   color: rgba(255, 255, 255, 0.72);
-  font-size: 0.86rem;
+  font-size: 1rem;
 }
 
 .hero-panel strong {
@@ -161,7 +162,7 @@ h2 {
 .kpi span {
   display: block;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.92rem;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -181,6 +182,7 @@ h2 {
 .kpi p {
   margin-bottom: 0;
   color: var(--muted);
+  font-size: 1.05rem;
   line-height: 1.4;
 }
 
@@ -202,7 +204,7 @@ h2 {
   border-radius: 999px;
   background: #e8f7f4;
   color: #087568;
-  font-size: 0.76rem;
+  font-size: 0.9rem;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -220,12 +222,13 @@ h2 {
 .insight strong {
   display: block;
   margin-bottom: 8px;
-  font-size: 1.05rem;
+  font-size: 1.18rem;
 }
 
 .insight p {
   margin-bottom: 0;
   color: var(--muted);
+  font-size: 1.04rem;
   line-height: 1.45;
 }
 
@@ -266,7 +269,7 @@ h2 {
 
 .metric-note {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 1.02rem;
   text-align: right;
 }
 
@@ -321,7 +324,7 @@ h2 {
   border-radius: 999px;
   background: #dff5ed;
   color: #067647;
-  font-size: 0.86rem;
+  font-size: 1rem;
   font-weight: 850;
   text-align: center;
 }
@@ -368,6 +371,7 @@ h2 {
 .risk-item p {
   margin-bottom: 0;
   color: var(--muted);
+  font-size: 1.03rem;
   line-height: 1.38;
 }
 
@@ -425,13 +429,13 @@ td {
 
 th {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.92rem;
   font-weight: 850;
   text-transform: uppercase;
 }
 
 td {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
 }
 
 td:nth-child(n+3),
