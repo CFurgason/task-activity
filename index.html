@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agent Task Report Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Call team command center</p>
+          <h1>Task velocity, reschedule pressure, and shop coverage in one live view.</h1>
+          <p class="lede">
+            Pulling directly from Google Sheets, this dashboard ranks agent output, surfaces workload risk,
+            and shows which shops and task types are driving the work.
+          </p>
+        </div>
+        <div class="hero-panel" aria-live="polite">
+          <span class="panel-label">Live source</span>
+          <strong id="sourceStatus">Connecting to Google Sheet</strong>
+          <span id="lastUpdated">Preparing dashboard</span>
+        </div>
+      </section>
+
+      <section class="kpi-grid" aria-label="Performance summary">
+        <article class="kpi kpi-primary">
+          <span>Total completed</span>
+          <strong id="totalCompleted">--</strong>
+          <p id="completedSubcopy">Across all agents and shops</p>
+        </article>
+        <article class="kpi">
+          <span>Completion efficiency</span>
+          <strong id="completionEfficiency">--</strong>
+          <p>Completed share of handled activity</p>
+        </article>
+        <article class="kpi">
+          <span>Reschedule load</span>
+          <strong id="rescheduleRate">--</strong>
+          <p>Reschedules per completed task</p>
+        </article>
+        <article class="kpi">
+          <span>Coverage</span>
+          <strong id="coverage">--</strong>
+          <p id="coverageSubcopy">Agents and shops served</p>
+        </article>
+      </section>
+
+      <section class="insight-strip" id="insights" aria-label="Priority insights"></section>
+
+      <section class="dashboard-grid">
+        <article class="board span-7">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Agent leaderboard</p>
+              <h2>Who is closing the work</h2>
+            </div>
+            <span class="metric-note" id="topAgentNote">Ranked by completed tasks</span>
+          </div>
+          <div class="leaderboard" id="agentLeaderboard"></div>
+        </article>
+
+        <article class="board span-5">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Risk radar</p>
+              <h2>What needs attention</h2>
+            </div>
+          </div>
+          <div class="risk-list" id="riskList"></div>
+        </article>
+
+        <article class="board span-6">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Shop concentration</p>
+              <h2>Where the work comes from</h2>
+            </div>
+          </div>
+          <div class="shop-list" id="shopList"></div>
+        </article>
+
+        <article class="board span-6">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Task mix</p>
+              <h2>What the calls are</h2>
+            </div>
+          </div>
+          <div class="task-grid" id="taskTypes"></div>
+        </article>
+      </section>
+
+      <section class="table-board">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Shop detail</p>
+            <h2>Account-level performance</h2>
+          </div>
+          <input id="shopSearch" type="search" placeholder="Filter shops or agents" aria-label="Filter shops or agents">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Shop</th>
+                <th>Primary agent</th>
+                <th>Completed</th>
+                <th>Rescheduled</th>
+                <th>Rate</th>
+                <th>Assigned</th>
+              </tr>
+            </thead>
+            <tbody id="shopTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <template id="errorTemplate">
+      <div class="error-card">
+        <strong>Could not load the Google Sheet.</strong>
+        <span>Make sure sharing is set to anyone with the link, or publish the sheet to the web.</span>
+      </div>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
