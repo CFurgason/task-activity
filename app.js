@@ -9,6 +9,7 @@ const percentFormat = new Intl.NumberFormat("en-US", { style: "percent", maximum
 const decimalFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
 
 let shopRows = [];
+let allRows = [];
 
 loadDashboard();
 
@@ -115,16 +116,32 @@ function parseCsv(text) {
 }
 
 function render(rawRows) {
-  const rows = rawRows.map(normalizeRow).filter((row) => row.agent && row.shop);
+  allRows = rawRows.map(normalizeRow).filter((row) => row.agent && row.shop);
+
+  populateFilters(allRows);
+  attachFilterEvents();
+
+  $("sourceStatus").textContent = "Connected to Google Sheet";
+  $("lastUpdated").textContent = `Updated ${new Date().toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`;
+
+  renderFilteredDashboard();
+}
+
+function renderFilteredDashboard() {
+  const agentFilter = $("agentFilter").value;
+  const shopFilter = $("shopFilter").value;
+  const rows = allRows.filter((row) => {
+    const agentMatch = !agentFilter || row.agent === agentFilter;
+    const shopMatch = !shopFilter || row.shop === shopFilter;
+    return agentMatch && shopMatch;
+  });
+
   const totals = summarize(rows);
   const agents = groupRows(rows, "agent");
   const shops = groupRows(rows, "shop");
   const tasks = taskTypeSummary(rows);
 
   shopRows = shops;
-
-  $("sourceStatus").textContent = "Connected to Google Sheet";
-  $("lastUpdated").textContent = `Updated ${new Date().toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`;
 
   renderKpis(totals, agents, shops);
   renderInsights(totals, agents, shops, tasks);
@@ -133,11 +150,45 @@ function render(rawRows) {
   renderShops(shops, totals.completed);
   renderTasks(tasks);
   renderShopTable(shops);
+  applyShopSearch();
+}
 
-  $("shopSearch").addEventListener("input", (event) => {
-    const term = event.target.value.trim().toLowerCase();
-    renderShopTable(shopRows.filter((row) => `${row.name} ${row.primaryAgent}`.toLowerCase().includes(term)));
+function populateFilters(rows) {
+  fillSelect($("agentFilter"), uniqueSorted(rows.map((row) => row.agent)), "All agents");
+  fillSelect($("shopFilter"), uniqueSorted(rows.map((row) => row.shop)), "All shops");
+}
+
+function fillSelect(select, options, defaultLabel) {
+  const current = select.value;
+  select.innerHTML = `<option value="">${defaultLabel}</option>${options
+    .map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`)
+    .join("")}`;
+  select.value = options.includes(current) ? current : "";
+}
+
+function uniqueSorted(values) {
+  return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+}
+
+function attachFilterEvents() {
+  if (attachFilterEvents.done) return;
+
+  $("agentFilter").addEventListener("change", renderFilteredDashboard);
+  $("shopFilter").addEventListener("change", renderFilteredDashboard);
+  $("clearFilters").addEventListener("click", () => {
+    $("agentFilter").value = "";
+    $("shopFilter").value = "";
+    $("shopSearch").value = "";
+    renderFilteredDashboard();
   });
+  $("shopSearch").addEventListener("input", applyShopSearch);
+
+  attachFilterEvents.done = true;
+}
+
+function applyShopSearch() {
+  const term = $("shopSearch").value.trim().toLowerCase();
+  renderShopTable(shopRows.filter((row) => `${row.name} ${row.primaryAgent}`.toLowerCase().includes(term)));
 }
 
 function normalizeRow(row) {
@@ -254,11 +305,17 @@ function renderKpis(totals, agents, shops) {
 }
 
 function renderInsights(totals, agents, shops, tasks) {
+  if (!agents.length || !shops.length) {
+    $("insights").innerHTML = emptyCard("No matching report rows", "Clear one filter or choose a different agent/shop combination.");
+    $("topAgentNote").textContent = "No rows in this view";
+    return;
+  }
+
   const topShops = shops.slice(0, 3);
   const topShopShare = totals.completed ? topShops.reduce((sum, shop) => sum + shop.completed, 0) / totals.completed : 0;
   const assignmentOwner = agents.slice().sort((a, b) => b.assigned - a.assigned)[0];
   const highestRate = agents.slice().sort((a, b) => b.rescheduleRate - a.rescheduleRate)[0];
-  const leadingTask = tasks[0];
+  const leadingTask = tasks[0] ?? { name: "No completed task type", count: 0 };
 
   $("insights").innerHTML = [
     insight("Concentration", `${topShops.map((shop) => shop.name).join(", ")} drive ${percentFormat.format(topShopShare)} of completions.`, "This is the shortest list to watch when volume changes.", topShopShare > 0.4 ? "warning" : ""),
@@ -278,6 +335,11 @@ function insight(label, title, body, tone) {
 }
 
 function renderAgents(agents) {
+  if (!agents.length) {
+    $("agentLeaderboard").innerHTML = emptyCard("No agents to show", "Try a broader filter.");
+    return;
+  }
+
   const max = Math.max(...agents.map((agent) => agent.completed), 1);
   $("agentLeaderboard").innerHTML = agents
     .map((agent) => `
@@ -292,6 +354,11 @@ function renderAgents(agents) {
 }
 
 function renderRisks(totals, agents, shops) {
+  if (!agents.length || !shops.length) {
+    $("riskList").innerHTML = emptyCard("No risk signals", "There is no data in this filtered view.");
+    return;
+  }
+
   const highRateAgent = agents.slice().sort((a, b) => b.rescheduleRate - a.rescheduleRate)[0];
   const lowShop = shops.slice().reverse().find((shop) => shop.completed > 0) ?? shops[shops.length - 1];
   const assignmentOwner = agents.slice().sort((a, b) => b.assigned - a.assigned)[0];
@@ -315,6 +382,11 @@ function risk(icon, title, body) {
 }
 
 function renderShops(shops, totalCompleted) {
+  if (!shops.length) {
+    $("shopList").innerHTML = emptyCard("No shops to show", "Try a broader filter.");
+    return;
+  }
+
   const max = Math.max(...shops.map((shop) => shop.completed), 1);
   $("shopList").innerHTML = shops
     .slice(0, 8)
@@ -329,6 +401,11 @@ function renderShops(shops, totalCompleted) {
 }
 
 function renderTasks(tasks) {
+  if (!tasks.length) {
+    $("taskTypes").innerHTML = emptyCard("No task mix available", "No completed task types were found in this view.");
+    return;
+  }
+
   const max = Math.max(...tasks.map((task) => task.count), 1);
   $("taskTypes").innerHTML = tasks
     .slice(0, 10)
@@ -343,6 +420,11 @@ function renderTasks(tasks) {
 }
 
 function renderShopTable(rows) {
+  if (!rows.length) {
+    $("shopTable").innerHTML = `<tr><td colspan="6">${emptyInline("No matching shops or agents")}</td></tr>`;
+    return;
+  }
+
   $("shopTable").innerHTML = rows
     .map((shop) => `
       <tr>
@@ -355,6 +437,14 @@ function renderShopTable(rows) {
       </tr>
     `)
     .join("");
+}
+
+function emptyCard(title, body) {
+  return `<div class="empty-state"><strong>${title}</strong><span>${body}</span></div>`;
+}
+
+function emptyInline(title) {
+  return `<span class="empty-inline">${title}</span>`;
 }
 
 function showLoadError() {
