@@ -24,6 +24,11 @@
         </div>
       </section>
 
+      <nav class="page-tabs" aria-label="Dashboard pages">
+        <button class="page-tab active" id="overviewTab" type="button" data-page="overview">Overview</button>
+        <button class="page-tab" id="insightsTab" type="button" data-page="insights">Actionable Insights</button>
+      </nav>
+
       <section class="filter-bar" aria-label="Dashboard filters">
         <label>
           <span>Agent</span>
@@ -40,98 +45,183 @@
         <button id="clearFilters" type="button">Clear filters</button>
       </section>
 
-      <section class="kpi-grid" aria-label="Performance summary">
-        <article class="kpi kpi-primary">
-          <span>Total completed</span>
-          <strong id="totalCompleted">--</strong>
-          <p id="completedSubcopy">Across all agents and shops</p>
-        </article>
-        <article class="kpi">
-          <span>Completion efficiency</span>
-          <strong id="completionEfficiency">--</strong>
-          <p>Completed share of handled activity</p>
-        </article>
-        <article class="kpi">
-          <span>Reschedule load</span>
-          <strong id="rescheduleRate">--</strong>
-          <p>Reschedules per completed task</p>
-        </article>
-        <article class="kpi">
-          <span>Coverage</span>
-          <strong id="coverage">--</strong>
-          <p id="coverageSubcopy">Agents and shops served</p>
-        </article>
-      </section>
+      <div class="page-view active" id="overviewPage">
+        <section class="kpi-grid" aria-label="Performance summary">
+          <article class="kpi kpi-primary">
+            <span>Total completed</span>
+            <strong id="totalCompleted">--</strong>
+            <p id="completedSubcopy">Across all agents and shops</p>
+          </article>
+          <article class="kpi">
+            <span>Completion efficiency</span>
+            <strong id="completionEfficiency">--</strong>
+            <p>Completed share of handled activity</p>
+          </article>
+          <article class="kpi">
+            <span>Reschedule load</span>
+            <strong id="rescheduleRate">--</strong>
+            <p>Reschedules per completed task</p>
+          </article>
+          <article class="kpi">
+            <span>Coverage</span>
+            <strong id="coverage">--</strong>
+            <p id="coverageSubcopy">Agents and shops served</p>
+          </article>
+        </section>
 
-      <section class="insight-strip" id="insights" aria-label="Priority insights"></section>
+        <section class="insight-strip" id="insights" aria-label="Priority insights"></section>
 
-      <section class="dashboard-grid">
-        <article class="board span-7">
+        <section class="dashboard-grid">
+          <article class="board span-7">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Agent leaderboard</p>
+                <h2>Who is closing the work</h2>
+              </div>
+              <span class="metric-note" id="topAgentNote">Ranked by completed tasks</span>
+            </div>
+            <div class="leaderboard" id="agentLeaderboard"></div>
+          </article>
+
+          <article class="board span-5">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Risk radar</p>
+                <h2>What needs attention</h2>
+              </div>
+            </div>
+            <div class="risk-list" id="riskList"></div>
+          </article>
+
+          <article class="board span-6">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Shop concentration</p>
+                <h2>Where the work comes from</h2>
+              </div>
+            </div>
+            <div class="shop-list" id="shopList"></div>
+          </article>
+
+          <article class="board span-6">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Task mix</p>
+                <h2>What the calls are</h2>
+              </div>
+            </div>
+            <div class="task-grid" id="taskTypes"></div>
+          </article>
+        </section>
+
+        <section class="table-board">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">Agent leaderboard</p>
-              <h2>Who is closing the work</h2>
+              <p class="eyebrow">Shop detail</p>
+              <h2>Account-level performance</h2>
             </div>
-            <span class="metric-note" id="topAgentNote">Ranked by completed tasks</span>
+            <input id="shopSearch" type="search" placeholder="Filter shops or agents" aria-label="Filter shops or agents">
           </div>
-          <div class="leaderboard" id="agentLeaderboard"></div>
-        </article>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Shop</th>
+                  <th>Primary agent</th>
+                  <th>Completed</th>
+                  <th>Rescheduled</th>
+                  <th>Rate</th>
+                  <th>Assigned</th>
+                </tr>
+              </thead>
+              <tbody id="shopTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
 
-        <article class="board span-5">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Risk radar</p>
-              <h2>What needs attention</h2>
+      <div class="page-view" id="insightsPage">
+        <section class="kpi-grid" aria-label="Actionable insight summary">
+          <article class="kpi kpi-primary">
+            <span>Open workload</span>
+            <strong id="openWorkload">--</strong>
+            <p id="openWorkloadSubcopy">Assigned minus completed</p>
+          </article>
+          <article class="kpi">
+            <span>Completed / assigned</span>
+            <strong id="completedAssignedRate">--</strong>
+            <p>Completion rate against assigned work</p>
+          </article>
+          <article class="kpi">
+            <span>Rescheduled / assigned</span>
+            <strong id="rescheduledAssignedRate">--</strong>
+            <p>Reschedule pressure against assigned work</p>
+          </article>
+          <article class="kpi">
+            <span>Archived / created</span>
+            <strong id="archivedCreatedRate">--</strong>
+            <p>Archive share of created activity</p>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="board span-12">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Report context</p>
+                <h2>What the source sheet can tell us</h2>
+              </div>
             </div>
-          </div>
-          <div class="risk-list" id="riskList"></div>
-        </article>
+            <div class="action-list" id="reportContextList"></div>
+          </article>
 
-        <article class="board span-6">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Shop concentration</p>
-              <h2>Where the work comes from</h2>
+          <article class="board span-6">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Workload balance</p>
+                <h2>Open load by agent</h2>
+              </div>
             </div>
-          </div>
-          <div class="shop-list" id="shopList"></div>
-        </article>
+            <div class="action-list" id="agentBacklogList"></div>
+          </article>
 
-        <article class="board span-6">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Task mix</p>
-              <h2>What the calls are</h2>
+          <article class="board span-6">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Task ownership</p>
+                <h2>Task type by agent</h2>
+              </div>
             </div>
-          </div>
-          <div class="task-grid" id="taskTypes"></div>
-        </article>
-      </section>
+            <div class="action-list" id="taskByAgentList"></div>
+          </article>
 
-      <section class="table-board">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Shop detail</p>
-            <h2>Account-level performance</h2>
-          </div>
-          <input id="shopSearch" type="search" placeholder="Filter shops or agents" aria-label="Filter shops or agents">
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Shop</th>
-                <th>Primary agent</th>
-                <th>Completed</th>
-                <th>Rescheduled</th>
-                <th>Rate</th>
-                <th>Assigned</th>
-              </tr>
-            </thead>
-            <tbody id="shopTable"></tbody>
-          </table>
-        </div>
-      </section>
+          <article class="board span-12">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Shop exceptions</p>
+                <h2>Accounts to review first</h2>
+              </div>
+              <button id="exportInsights" type="button">Export CSV</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Shop</th>
+                    <th>Signal</th>
+                    <th>Primary agent</th>
+                    <th>Completed</th>
+                    <th>Assigned</th>
+                    <th>Open load</th>
+                    <th>Reschedule rate</th>
+                  </tr>
+                </thead>
+                <tbody id="exceptionTable"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+      </div>
     </main>
 
     <template id="errorTemplate">

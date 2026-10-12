@@ -10,6 +10,8 @@ const decimalFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2,
 
 let shopRows = [];
 let allRows = [];
+let currentAgents = [];
+let currentShops = [];
 
 loadDashboard();
 
@@ -141,6 +143,8 @@ function renderFilteredDashboard() {
   const shops = groupRows(rows, "shop");
   const tasks = taskTypeSummary(rows);
 
+  currentAgents = agents;
+  currentShops = shops;
   shopRows = shops;
 
   renderKpis(totals, agents, shops);
@@ -150,6 +154,7 @@ function renderFilteredDashboard() {
   renderShops(shops, totals.completed);
   renderTasks(tasks);
   renderShopTable(shops);
+  renderActionableInsights(totals, agents, shops, rows, tasks);
   applyShopSearch();
 }
 
@@ -182,8 +187,19 @@ function attachFilterEvents() {
     renderFilteredDashboard();
   });
   $("shopSearch").addEventListener("input", applyShopSearch);
+  $("overviewTab").addEventListener("click", () => showPage("overview"));
+  $("insightsTab").addEventListener("click", () => showPage("insights"));
+  $("exportInsights").addEventListener("click", exportInsightsCsv);
 
   attachFilterEvents.done = true;
+}
+
+function showPage(page) {
+  const isInsights = page === "insights";
+  $("overviewPage").classList.toggle("active", !isInsights);
+  $("insightsPage").classList.toggle("active", isInsights);
+  $("overviewTab").classList.toggle("active", !isInsights);
+  $("insightsTab").classList.toggle("active", isInsights);
 }
 
 function applyShopSearch() {
@@ -277,6 +293,35 @@ function taskTypeSummary(rows) {
   return [...types.entries()]
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);
+}
+
+function taskTypeByAgent(rows) {
+  const agentMap = new Map();
+
+  rows.forEach((row) => {
+    const item = agentMap.get(row.agent) ?? {
+      name: row.agent,
+      total: 0,
+      types: new Map(),
+    };
+
+    extractTaskTypes(row.completedTasks).forEach((type) => {
+      item.total += 1;
+      item.types.set(type, (item.types.get(type) ?? 0) + 1);
+    });
+
+    agentMap.set(row.agent, item);
+  });
+
+  return [...agentMap.values()]
+    .map((agent) => ({
+      ...agent,
+      topTypes: [...agent.types.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([name, count]) => ({ name, count })),
+    }))
+    .sort((a, b) => b.total - a.total);
 }
 
 function extractTaskTypes(value) {
@@ -437,6 +482,162 @@ function renderShopTable(rows) {
       </tr>
     `)
     .join("");
+}
+
+function renderActionableInsights(totals, agents, shops, rows) {
+  const openLoad = totals.assigned - totals.completed;
+  const maxAgentOpen = Math.max(...agents.map((agent) => Math.max(agent.assigned - agent.completed, 0)), 1);
+
+  $("openWorkload").textContent = numberFormat.format(openLoad);
+  $("openWorkloadSubcopy").textContent = `${numberFormat.format(totals.assigned)} assigned minus ${numberFormat.format(totals.completed)} completed`;
+  $("completedAssignedRate").textContent = totals.assigned ? percentFormat.format(totals.completed / totals.assigned) : "--";
+  $("rescheduledAssignedRate").textContent = totals.assigned ? percentFormat.format(totals.rescheduled / totals.assigned) : "--";
+  $("archivedCreatedRate").textContent = totals.created ? percentFormat.format(totals.archived / totals.created) : "--";
+
+  if (!agents.length) {
+    renderReportContext(rows, agents, shops);
+    $("agentBacklogList").innerHTML = emptyCard("No workload to show", "Try a broader filter.");
+    $("taskByAgentList").innerHTML = emptyCard("No task ownership to show", "Try a broader filter.");
+    $("exceptionTable").innerHTML = `<tr><td colspan="7">${emptyInline("No account exceptions found")}</td></tr>`;
+    return;
+  }
+
+  renderReportContext(rows, agents, shops);
+
+  $("agentBacklogList").innerHTML = agents
+    .slice()
+    .sort((a, b) => (b.assigned - b.completed) - (a.assigned - a.completed))
+    .slice(0, 8)
+    .map((agent) => {
+      const agentOpen = agent.assigned - agent.completed;
+      return actionRow(
+        agent.name,
+        `${numberFormat.format(agentOpen)} open`,
+        `${numberFormat.format(agent.assigned)} assigned, ${numberFormat.format(agent.completed)} completed`,
+        percent(Math.max(agentOpen, 0) / maxAgentOpen),
+      );
+    })
+    .join("");
+
+  const taskAgents = taskTypeByAgent(rows);
+  $("taskByAgentList").innerHTML = taskAgents.length
+    ? taskAgents
+        .slice(0, 8)
+        .map((agent) => {
+          const mix = agent.topTypes.map((type) => `${type.name}: ${numberFormat.format(type.count)}`).join(" | ");
+          return actionRow(agent.name, numberFormat.format(agent.total), mix || "No completed task types found", percent(agent.total / Math.max(taskAgents[0].total, 1)));
+        })
+        .join("")
+    : emptyCard("No task ownership to show", "No completed task types were found in this view.");
+
+  renderExceptionTable(shopExceptions(shops));
+}
+
+function renderReportContext(rows, agents, shops) {
+  const headers = Object.keys(rows[0] ?? {});
+  const dateFields = headers.filter((header) => /date|period|week|month|start|end/i.test(header));
+  const activeFilters = [
+    $("agentFilter").value ? `Agent: ${$("agentFilter").value}` : "",
+    $("shopFilter").value ? `Shop: ${$("shopFilter").value}` : "",
+  ].filter(Boolean);
+
+  $("reportContextList").innerHTML = [
+    actionRow("Included rows", numberFormat.format(rows.length), `${numberFormat.format(agents.length)} agents and ${numberFormat.format(shops.length)} shops in the current filter`, percent(1)),
+    actionRow(
+      "Reporting window",
+      dateFields.length ? dateFields.join(", ") : "Not in sheet",
+      dateFields.length ? "Date or period fields were found in the source sheet." : "Add a date or report-period column to the sheet to show a true reporting window here.",
+      dateFields.length ? percent(1) : percent(0),
+    ),
+    actionRow("Active filters", activeFilters.length ? activeFilters.join(" | ") : "All data", "All values shown on this page are derived from the live Google Sheet rows.", percent(1)),
+  ].join("");
+}
+
+function actionRow(title, value, detail, width) {
+  return `<div class="action-row">
+    <div>
+      <strong title="${escapeHtml(title)}">${escapeHtml(title)}</strong>
+      <p title="${escapeHtml(detail)}">${escapeHtml(detail)}</p>
+    </div>
+    <span class="bar"><span class="fill" style="--w:${width}"></span></span>
+    <span class="value">${escapeHtml(value)}</span>
+  </div>`;
+}
+
+function shopExceptions(shops) {
+  return shops
+    .map((shop) => {
+      const openLoad = shop.assigned - shop.completed;
+      const signals = [];
+
+      if (shop.rescheduleRate >= 0.85) signals.push("High reschedule pressure");
+      if (openLoad > 0) signals.push("Open workload");
+      if (shop.completed > 0 && shop.completed <= 5) signals.push("Low completion volume");
+      if (!shop.completed && shop.assigned) signals.push("Assigned with no completions");
+
+      const severity = (shop.rescheduleRate * 100) + Math.max(openLoad, 0) + (shop.completed <= 5 ? 15 : 0);
+
+      return {
+        ...shop,
+        openLoad,
+        signal: signals.join("; "),
+        severity,
+      };
+    })
+    .filter((shop) => shop.signal)
+    .sort((a, b) => b.severity - a.severity)
+    .slice(0, 18);
+}
+
+function renderExceptionTable(rows) {
+  if (!rows.length) {
+    $("exceptionTable").innerHTML = `<tr><td colspan="7">${emptyInline("No account exceptions found")}</td></tr>`;
+    return;
+  }
+
+  $("exceptionTable").innerHTML = rows
+    .map((shop) => `
+      <tr>
+        <td>${escapeHtml(shop.name)}</td>
+        <td>${escapeHtml(shop.signal)}</td>
+        <td>${escapeHtml(shop.primaryAgent)}</td>
+        <td>${numberFormat.format(shop.completed)}</td>
+        <td>${numberFormat.format(shop.assigned)}</td>
+        <td>${numberFormat.format(shop.openLoad)}</td>
+        <td><span class="pill ${rateClass(shop.rescheduleRate)}">${decimalFormat.format(shop.rescheduleRate)}</span></td>
+      </tr>
+    `)
+    .join("");
+}
+
+function exportInsightsCsv() {
+  const rows = shopExceptions(currentShops);
+  const headers = ["Shop", "Signal", "Primary Agent", "Completed", "Assigned", "Open Load", "Reschedule Rate"];
+  const csvRows = [
+    headers,
+    ...rows.map((shop) => [
+      shop.name,
+      shop.signal,
+      shop.primaryAgent,
+      shop.completed,
+      shop.assigned,
+      shop.openLoad,
+      decimalFormat.format(shop.rescheduleRate),
+    ]),
+  ];
+
+  const blob = new Blob([csvRows.map((row) => row.map(csvCell).join(",")).join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "actionable-insights.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function csvCell(value) {
+  const text = String(value ?? "");
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
 function emptyCard(title, body) {
