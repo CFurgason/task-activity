@@ -13,6 +13,7 @@ let allRows = [];
 let currentAgents = [];
 let currentShops = [];
 
+attachFilterEvents();
 loadDashboard();
 
 async function loadDashboard() {
@@ -121,7 +122,6 @@ function render(rawRows) {
   allRows = rawRows.map(normalizeRow).filter((row) => row.agent && row.shop);
 
   populateFilters(allRows);
-  attachFilterEvents();
 
   $("sourceStatus").textContent = "Connected to Google Sheet";
   $("lastUpdated").textContent = `Updated ${new Date().toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`;
@@ -196,10 +196,14 @@ function attachFilterEvents() {
 
 function showPage(page) {
   const isInsights = page === "insights";
+  $("overviewPage").hidden = isInsights;
+  $("insightsPage").hidden = !isInsights;
   $("overviewPage").classList.toggle("active", !isInsights);
   $("insightsPage").classList.toggle("active", isInsights);
   $("overviewTab").classList.toggle("active", !isInsights);
   $("insightsTab").classList.toggle("active", isInsights);
+  $("overviewTab").setAttribute("aria-selected", String(!isInsights));
+  $("insightsTab").setAttribute("aria-selected", String(isInsights));
 }
 
 function applyShopSearch() {

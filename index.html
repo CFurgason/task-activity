@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Agent Task Report Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=20261012-2">
   </head>
   <body>
     <main class="shell">
@@ -25,8 +25,8 @@
       </section>
 
       <nav class="page-tabs" aria-label="Dashboard pages">
-        <button class="page-tab active" id="overviewTab" type="button" data-page="overview">Overview</button>
-        <button class="page-tab" id="insightsTab" type="button" data-page="insights">Actionable Insights</button>
+        <button class="page-tab active" id="overviewTab" type="button" aria-controls="overviewPage" aria-selected="true">Overview</button>
+        <button class="page-tab" id="insightsTab" type="button" aria-controls="insightsPage" aria-selected="false">Actionable Insights</button>
       </nav>
 
       <section class="filter-bar" aria-label="Dashboard filters">
@@ -140,7 +140,7 @@
         </section>
       </div>
 
-      <div class="page-view" id="insightsPage">
+      <div class="page-view" id="insightsPage" hidden>
         <section class="kpi-grid" aria-label="Actionable insight summary">
           <article class="kpi kpi-primary">
             <span>Open workload</span>
@@ -231,6 +231,6 @@
       </div>
     </template>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=20261012-2"></script>
   </body>
 </html>
